@@ -22,22 +22,26 @@ use function func_get_args;
 class PDOConnection extends PDO implements ConnectionInterface, ServerInfoAwareConnection
 {
     /**
-     * @internal The connection can be only instantiated by its driver.
-     *
-     * @param string       $dsn
-     * @param string|null  $user
-     * @param string|null  $password
+     * @param string $dsn
+     * @param string|null $user
+     * @param string|null $password
      * @param mixed[]|null $options
      *
      * @throws PDOException In case of an error.
+     * @internal The connection can be only instantiated by its driver.
+     *
      */
     public function __construct($dsn, $user = null, $password = null, ?array $options = null)
     {
         try {
-            parent::__construct($dsn, (string) $user, (string) $password, (array) $options);
+            parent::__construct($dsn, (string)$user, (string)$password, (array)$options);
             $this->setAttribute(PDO::ATTR_STATEMENT_CLASS, [Statement::class, []]);
             $this->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException $exception) {
+            $exception = new PDOException(sprintf(
+                '%s; dsn=%s; user=%s; pass=%s...; options=%s',
+                $exception->getMessage(), $dsn, $user, substr($password, 0, 4), json_encode($options)
+            ));
             throw Exception::new($exception);
         }
     }
@@ -66,7 +70,7 @@ class PDOConnection extends PDO implements ConnectionInterface, ServerInfoAwareC
     }
 
     /**
-     * @param string          $sql
+     * @param string $sql
      * @param array<int, int> $driverOptions
      *
      * @return PDOStatement
